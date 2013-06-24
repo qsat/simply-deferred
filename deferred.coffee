@@ -72,17 +72,20 @@ Deferred = ->
     # or failure callbacks using `.fail(callback)`,
     candidate.fail = storeCallbacks((-> state is REJECTED), failCallbacks)
     # or register a callback to always fire when the deferred is either resolved or rejected - using `.always(callback)`
-    candidate.always = -> candidate.done(arguments...).fail(arguments...)      
+    candidate.always = -> candidate.done(arguments...).fail(arguments...)
 
     # It also makes sense to set up a piper to which can filter the success or failure arguments through the given filter methods. 
     # Quite useful if you want to transform the results of a promise or log them in some way. 
-    pipe = (doneFilter, failFilter) ->                        
+    pipe = (doneFilter, failFilter) ->
       deferred = new Deferred()
-      filter = (target, source, filter) ->
-        if filter then target -> source filter (flatten arguments)...
+      filter = (target, source, filter, methodName) ->
+        if filter then target ->
+          result = filter (flatten arguments)...
+          if result?[methodName]? then result[methodName] source
+          else source result
         else target -> source (flatten arguments)...
-      filter candidate.done, deferred.resolve, doneFilter
-      filter candidate.fail, deferred.reject, failFilter
+      filter candidate.done, deferred.resolve, doneFilter, "done"
+      filter candidate.fail, deferred.reject, failFilter, "fail"
       deferred
 
     # Expose the `.pipe(doneFilter, failFilter)` method and alias it to `.then()`.

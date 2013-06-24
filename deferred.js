@@ -101,10 +101,16 @@
       pipe = function(doneFilter, failFilter) {
         var deferred, filter;
         deferred = new Deferred();
-        filter = function(target, source, filter) {
+        filter = function(target, source, filter, methodName) {
           if (filter) {
             return target(function() {
-              return source(filter.apply(null, flatten(arguments)));
+              var result;
+              result = filter.apply(null, flatten(arguments));
+              if (result.done) {
+                return result[methodName](source);
+              } else {
+                return source(result);
+              }
             });
           } else {
             return target(function() {
@@ -112,8 +118,8 @@
             });
           }
         };
-        filter(candidate.done, deferred.resolve, doneFilter);
-        filter(candidate.fail, deferred.reject, failFilter);
+        filter(candidate.done, deferred.resolve, doneFilter, "done");
+        filter(candidate.fail, deferred.reject, failFilter, "fail");
         return deferred;
       };
       candidate.pipe = pipe;
