@@ -106,7 +106,7 @@
             return target(function() {
               var result;
               result = filter.apply(null, flatten(arguments));
-              if (result.done) {
+              if ((result != null ? result[methodName] : void 0) != null) {
                 return result[methodName](source);
               } else {
                 return source(result);
